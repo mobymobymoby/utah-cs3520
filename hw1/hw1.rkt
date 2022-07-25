@@ -84,3 +84,49 @@
       #f)
 
 ; part 5
+(define (positive-trees? (tree_list : (Listof Tree))) : Boolean
+  (cond
+    [(= (length tree_list) 0) #t]
+    [(<= (sum (first tree_list)) 0) #f]
+    [(positive-trees? (rest tree_list)) #t]
+    [else #f]))
+
+(test (positive-trees? (cons (leaf 6)
+                             empty))
+      #t)
+
+(test (positive-trees? (cons (leaf -6)
+                             empty))
+      #f)
+
+(test (positive-trees? (cons (node 1 (leaf 6) (leaf -6))
+                             empty))
+      #t)
+
+(test (positive-trees? (cons (node 1 (leaf 6) (leaf -6))
+                             (cons (node 0 (leaf 0) (leaf 1))
+                                   empty)))
+      #t)
+
+(test (positive-trees? (cons (node -1 (leaf 6) (leaf -6))
+                             (cons (node 0 (leaf 0) (leaf 1))
+                                   empty)))
+      #f)
+
+
+; part 6 - traverse in-order
+(define (flatten (tree : Tree)) : (Listof Number)
+  (type-case Tree tree
+    [(leaf v)
+     (list v)]
+    [(node v left right)
+     (cons v (append (flatten left) (flatten right)))]))
+
+(test (flatten (node 1 (node 2 (leaf 3) (leaf 4)) (node 5 (leaf 6) (leaf 7))))
+      (list 1 2 3 4 5 6 7))
+
+(test (flatten (leaf 1))
+      (list 1))
+
+(test (flatten (node 1 (leaf 2) (node 3 (leaf 4) (leaf 5))))
+      (list 1 2 3 4 5))
