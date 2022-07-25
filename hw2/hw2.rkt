@@ -1,4 +1,8 @@
 #lang plait
+; "S-Exp interpreter"
+; input: S-Exp (program)
+; -> parse output: Exp
+; -> interp output: Number
 
 (define-type Exp
   (numE [n : Number])
@@ -8,7 +12,10 @@
   (multE [l : Exp]
          [r : Exp])
   (appE [s : Symbol]
-        [arg : Exp]))
+        [arg : Exp])
+  (maxE [l : Exp]      ; part 1
+        [r : Exp]))
+
 
 (define-type Func-Defn
   (fd [name : Symbol] 
@@ -42,6 +49,9 @@
     [(s-exp-match? `{SYMBOL ANY} s)
      (appE (s-exp->symbol (first (s-exp->list s)))
            (parse (second (s-exp->list s))))]
+    [(s-exp-match? `{max ANY ANY} s)                 ; part 1
+     (maxE (parse (second (s-exp->list s)))
+           (parse (third (s-exp->list s))))]
     [else (error 'parse "invalid input")]))
 
 (define (parse-fundef [s : S-Exp]) : Func-Defn
@@ -86,6 +96,7 @@
     [(idE s) (error 'interp "free variable")]
     [(plusE l r) (+ (interp l defs) (interp r defs))]
     [(multE l r) (* (interp l defs) (interp r defs))]
+    [(maxE l r) (max (interp l defs) (interp r defs))]       ; part 1
     [(appE s arg) (local [(define fd (get-fundef s defs))]
                     (interp (subst (numE (interp arg defs))
                                    (fd-arg fd)
@@ -110,7 +121,17 @@
         16)
   (test (interp (parse `{quadruple 8})
                 (list double-def quadruple-def))
-        32))
+        32)
+  ; part 1 - testcase
+    (test (interp (parse `{max 1 2})
+                (list))
+        2)
+  (test (interp (parse `{max {+ 4 5} {+ 2 3}})
+                (list))
+        9)
+  (test (interp (parse `{max {double 4} {quadruple 2}})
+                (list double-def quadruple-def))
+        8))
 
 ;; get-fundef ----------------------------------------
 (define (get-fundef [s : Symbol] [defs : (Listof Func-Defn)]) : Func-Defn
@@ -143,6 +164,8 @@
                         (subst what for r))]
     [(multE l r) (multE (subst what for l)
                         (subst what for r))]
+    [(maxE l r) (maxE (subst what for l)           ; part 1
+                      (subst what for r))]                             
     [(appE s arg) (appE s (subst what for arg))]))
 
 (module+ test
